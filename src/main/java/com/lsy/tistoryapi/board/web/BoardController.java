@@ -13,18 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("")
 public class BoardController {
 
-    @Value("${open-api.app-id}")
-    private String appId;
-
-    @Value("${open-api.secret-key}")
-    private String secretKey;
-
-    @Value("${open-api.access-token}")
-    private String accessToken;
-    
     @GetMapping("/")
     public String home() {
-        log.info("accessToken = {}", accessToken);
         return "pages/index";
     }
 }
