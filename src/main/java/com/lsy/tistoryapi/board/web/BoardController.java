@@ -21,8 +21,7 @@ public class BoardController {
 
     @Value("${open-api.access-token}")
     private String accessToken;
-
-
+    
     @GetMapping("/")
     public String home() {
         log.info("accessToken = {}", accessToken);

@@ -8,4 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Transactional(readOnly = true)
 public class BoardService {
+
+
 }
