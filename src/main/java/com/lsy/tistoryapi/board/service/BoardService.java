@@ -4,14 +4,19 @@ import com.lsy.tistoryapi.board.model.PostVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,20 +51,23 @@ public class BoardService {
         RestTemplate restTemplate;
 
         try {
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setAcceptCharset(Collections.singletonList(Charset.forName("UTF-8")));
+
             URI requestURI = new URI(apiUrl + "post/list?" + "access_token=" + accessToken + "&blogName=" + blogName + "&output=json");
             restTemplate = new RestTemplate();
 
-            PostVo postVo = restTemplate.getForObject(requestURI, PostVo.class);
+            ResponseEntity<String> response = restTemplate.getForEntity(requestURI, String.class);
+            String responseBody = response.getBody();
+            String decodedResponse = new String(responseBody.getBytes("ISO-8859-1"), "UTF-8");
 
-            log.info("postVo = [{}]", postVo);
-//            log.info("postList size => ", postList.size());
-//
-//            if (postList.size() > 0) {
-//                resultMap.put("code", HttpStatus.OK);
-//                resultMap.put("list", postList);
-//            }
+            log.info("status = [{}]", response.getStatusCode());
+            log.info("response = [{}]", response.getBody());
+            resultMap.put("code", response.getStatusCode());
+            resultMap.put("list", decodedResponse);
 
-        } catch (URISyntaxException ue) {
+        } catch (URISyntaxException | UnsupportedEncodingException ue) {
             resultMap.put("code", HttpStatus.BAD_REQUEST);
             log.info("URISyntaxException = []", ue.getMessage());
         }
