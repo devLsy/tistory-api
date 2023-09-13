@@ -17,5 +17,6 @@ public class Item {
     private String totalCount;
 
     List<PostVo> posts = new ArrayList<>();
+    List<CommentsVo> comments = new ArrayList<>();
 
 }

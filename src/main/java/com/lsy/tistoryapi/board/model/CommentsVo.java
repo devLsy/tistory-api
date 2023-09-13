@@ -1,11 +1,18 @@
 package com.lsy.tistoryapi.board.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CommentsVo {
 
-    private String postId;      //포스트 아이디
-    private String commentsId;  //댓글작성자 아이디
-    private String name;        //댓글작성자 닉네임
+    private String id;  //댓글아이디
+    private String date;
+    private String name;
+    private String parentId;
+    private String homepage;
+    private String visibility;
+    private String comment;
+    private String open;
 }

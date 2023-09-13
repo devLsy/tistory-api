@@ -1,7 +1,9 @@
 package com.lsy.tistoryapi.board.service;
 
+import com.lsy.tistoryapi.board.model.CommentsVo;
 import com.lsy.tistoryapi.board.model.PostResponse;
 import com.lsy.tistoryapi.board.model.PostVo;
+import com.lsy.tistoryapi.board.model.WriteCmmentVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -68,12 +70,19 @@ public class BoardService {
             PostResponse postResponse = responseEntity.getBody();
             List<PostVo> posts = postResponse.getTistory().getItem().getPosts();
 
+            List<WriteCmmentVo> topLevelComments = new ArrayList<>();
+
             if (posts != null) {
                 //댓글이 있는 게시글 아이디만 추출
                 List<String> commentedPostIds = getCommentedPostsId(posts);
 
+                //댓글 존재 게시글 목록 개수만큼 루프 돌며 댓글 작성
+                for (String commentedPostId : commentedPostIds) {
+                    topLevelComments = getTopLevelComments(commentedPostId);
+                }
+
+                resultMap.put("topLevelComments", topLevelComments);
                 resultMap.put("code", HttpStatus.OK);
-                resultMap.put("list", commentedPostIds);
             }
 
         } catch (URISyntaxException ue) {
@@ -101,4 +110,54 @@ public class BoardService {
         }
         return commentedPostIds;
     }
+
+    /**
+     * 댓글 목록 중 대댓글이 아닌 목록 추출(작성자가 답변 달지 않는 경우)
+     * @param commentedPostIds
+     * @return
+     */
+    public List<WriteCmmentVo> getTopLevelComments(String commentedPostIds) {
+
+        List<WriteCmmentVo> writeCmmentVos = new ArrayList<>();
+
+        try {
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+    
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            URI requestURI = new URI(apiUrl + "comment/list?" + "access_token=" + accessToken + "&blogName=" + blogName + "&output=json" + "&postId=" + commentedPostIds);
+
+            ResponseEntity<PostResponse> responseEntity = restTemplate.exchange(
+                               requestURI,
+                               HttpMethod.GET,
+                               entity,
+                               PostResponse.class
+                       );
+
+            PostResponse postResponse = responseEntity.getBody();
+            List<CommentsVo> comments = postResponse.getTistory().getItem().getComments();
+
+            if (comments != null) {
+
+                WriteCmmentVo writeCmmentVo;
+
+                for (CommentsVo comment : comments) {
+                    writeCmmentVo = new WriteCmmentVo();
+                    writeCmmentVo.setPostId(commentedPostIds);
+                    writeCmmentVo.setParentId(comment.getId());
+                    writeCmmentVo.setContent(comment.getName() + "님 방문/댓글 감사합니다. 🙂");
+                    writeCmmentVos.add(writeCmmentVo);
+                }
+            }
+
+        } catch (URISyntaxException ue) {
+            log.info("URISyntaxException = []", ue.getMessage());
+        }
+        
+        return writeCmmentVos;
+    }
+
+
 }
