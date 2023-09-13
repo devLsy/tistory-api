@@ -4,7 +4,8 @@ import lombok.Data;
 
 @Data
 public class CommentsVo {
-    
+
+    private String postId;      //포스트 아이디
     private String commentsId;  //댓글작성자 아이디
     private String name;        //댓글작성자 닉네임
 }

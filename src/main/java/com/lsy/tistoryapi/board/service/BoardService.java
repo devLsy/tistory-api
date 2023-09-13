@@ -1,12 +1,12 @@
 package com.lsy.tistoryapi.board.service;
 
+import com.lsy.tistoryapi.board.model.PostResponse;
 import com.lsy.tistoryapi.board.model.PostVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -16,10 +16,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -41,6 +38,8 @@ public class BoardService {
 
     private String apiUrl = "https://www.tistory.com/apis/";
 
+    private final RestTemplate restTemplate;
+
     /**
      * 게시글 조회
      * @return
@@ -48,30 +47,58 @@ public class BoardService {
     public ResponseEntity getPosts() {
         //resultMap
         Map<String, Object> resultMap = new HashMap<String, Object>();
-        RestTemplate restTemplate;
+
 
         try {
 
             HttpHeaders headers = new HttpHeaders();
-            headers.setAcceptCharset(Collections.singletonList(Charset.forName("UTF-8")));
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
 
             URI requestURI = new URI(apiUrl + "post/list?" + "access_token=" + accessToken + "&blogName=" + blogName + "&output=json");
-            restTemplate = new RestTemplate();
 
-            ResponseEntity<String> response = restTemplate.getForEntity(requestURI, String.class);
-            String responseBody = response.getBody();
-            String decodedResponse = new String(responseBody.getBytes("ISO-8859-1"), "UTF-8");
+            ResponseEntity<PostResponse> responseEntity = restTemplate.exchange(
+                               requestURI,
+                               HttpMethod.GET,
+                               entity,
+                               PostResponse.class
+                       );
 
-            log.info("status = [{}]", response.getStatusCode());
-            log.info("response = [{}]", response.getBody());
-            resultMap.put("code", response.getStatusCode());
-            resultMap.put("list", decodedResponse);
+            PostResponse postResponse = responseEntity.getBody();
+            List<PostVo> posts = postResponse.getTistory().getItem().getPosts();
 
-        } catch (URISyntaxException | UnsupportedEncodingException ue) {
+            if (posts != null) {
+                //댓글이 있는 게시글 아이디만 추출
+                List<String> commentedPostIds = getComments(posts);
+
+                resultMap.put("code", HttpStatus.OK);
+                resultMap.put("list", commentedPostIds);
+            }
+
+        } catch (URISyntaxException ue) {
             resultMap.put("code", HttpStatus.BAD_REQUEST);
             log.info("URISyntaxException = []", ue.getMessage());
         }
 
         return new ResponseEntity<>(resultMap, HttpStatus.OK);
+    }
+    
+    /**
+     * 댓글이 있는 게시글 아이디 목록 추출
+     * @param posts
+     * @return
+     */
+    public List<String> getComments(List<PostVo> posts) {
+
+        List<String> commentedPostIds = new ArrayList<>();
+
+        for (PostVo post : posts) {
+
+            if (!"0".equals(post.getComments())) {
+                commentedPostIds.add(post.getId());
+            }
+        }
+        return commentedPostIds;
     }
 }
