@@ -70,7 +70,7 @@ public class BoardService {
 
             if (posts != null) {
                 //댓글이 있는 게시글 아이디만 추출
-                List<String> commentedPostIds = getComments(posts);
+                List<String> commentedPostIds = getCommentedPostsId(posts);
 
                 resultMap.put("code", HttpStatus.OK);
                 resultMap.put("list", commentedPostIds);
@@ -83,13 +83,13 @@ public class BoardService {
 
         return new ResponseEntity<>(resultMap, HttpStatus.OK);
     }
-    
+
     /**
      * 댓글이 있는 게시글 아이디 목록 추출
      * @param posts
      * @return
      */
-    public List<String> getComments(List<PostVo> posts) {
+    public List<String> getCommentedPostsId(List<PostVo> posts) {
 
         List<String> commentedPostIds = new ArrayList<>();
 
