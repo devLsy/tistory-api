@@ -50,16 +50,15 @@ public class BoardService {
         //resultMap
         Map<String, Object> resultMap = new HashMap<String, Object>();
 
-
         try {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
-
-            URI requestURI = new URI(apiUrl + "post/list?" + "access_token=" + accessToken + "&blogName=" + blogName + "&output=json");
-
+            //게시글 조회
+            URI requestURI = new URI(apiUrl + "post/list?" + "access_token=" + accessToken + "&blogName=" + blogName + "&output=json" + "&page=1");
+            
             ResponseEntity<PostResponse> responseEntity = restTemplate.exchange(
                                requestURI,
                                HttpMethod.GET,
@@ -82,6 +81,7 @@ public class BoardService {
                 }
 
                 resultMap.put("topLevelComments", topLevelComments);
+                resultMap.put("topLevelCommentsCount", topLevelComments.size());
                 resultMap.put("code", HttpStatus.OK);
             }
 
@@ -140,11 +140,12 @@ public class BoardService {
             List<CommentsVo> comments = postResponse.getTistory().getItem().getComments();
 
             if (comments != null) {
-
-                WriteCmmentVo writeCmmentVo;
-
                 for (CommentsVo comment : comments) {
-                    writeCmmentVo = new WriteCmmentVo();
+                    // parentId가 비어 있지 않은 경우를 필터링
+                    if (comment.getParentId() != null && !comment.getParentId().isEmpty() && !"".equals(comment.getParentId())) {
+                        continue;
+                    }
+                    WriteCmmentVo writeCmmentVo = new WriteCmmentVo();
                     writeCmmentVo.setPostId(commentedPostIds);
                     writeCmmentVo.setParentId(comment.getId());
                     writeCmmentVo.setContent(comment.getName() + "님 방문/댓글 감사합니다. 🙂");
